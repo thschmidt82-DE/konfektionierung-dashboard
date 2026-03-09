@@ -1,0 +1,14 @@
+{
+  "buildCommand": "echo 'No build needed'",
+  "outputDirectory": ".",
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/KonfektionierungsDashboard_Cloud_Firebase.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/KonfektionierungsDashboard_Cloud_Firebase.html"
+    }
+  ]
+}
