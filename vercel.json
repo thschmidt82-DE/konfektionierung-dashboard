@@ -1,14 +1,11 @@
 {
   "buildCommand": "echo 'No build needed'",
   "outputDirectory": ".",
-  "routes": [
+  "public": true,
+  "rewrites": [
     {
-      "src": "/",
-      "dest": "/KonfektionierungsDashboard_Cloud_Firebase.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/KonfektionierungsDashboard_Cloud_Firebase.html"
+      "source": "/(.*)",
+      "destination": "/KonfektionierungsDashboard_Cloud_Firebase.html"
     }
   ]
 }
