@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/KonfektionierungsDashboard_Cloud_Firebase.html (1)"
+      "destination": "/KonfektionierungsDashboard_Cloud_Firebase (1).html"
     }
   ]
 }
