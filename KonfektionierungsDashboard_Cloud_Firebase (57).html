@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konfektionierung Dashboard - MANIKO</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(180deg, #f5f7fa 0%, #ffffff 100%); font-family: 'Segoe UI', 'Roboto', sans-serif; color: #333; }
+        
+        .header { 
+            background: linear-gradient(135deg, #0F2A4A 0%, #1a3a52 100%); 
+            padding: 16px 32px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 4px 20px rgba(15, 42, 74, 0.15);
+        }
+        .logo-section { display: flex; align-items: center; gap: 24px; }
+        .logo-container { display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); padding: 10px 16px; border-radius: 8px; }
+        .logo-text { color: white; font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+        .header-title { color: white; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+        
+        .container { max-width: 1280px; margin: 20px auto; padding: 0 16px; }
+        .glass { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid #e8ecf1; }
+        
+        input, select { 
+            background: white !important; 
+            border: 2px solid #d1d8e0 !important; 
+            color: #333 !important; 
+            padding: 11px 13px !important; 
+            border-radius: 8px !important; 
+            font-size: 13px !important; 
+            font-weight: 500 !important;
+            transition: all 0.2s !important;
+        }
+        input:focus, select:focus { 
+            outline: none !important; 
+            border-color: #0F2A4A !important; 
+            box-shadow: 0 0 0 3px rgba(15, 42, 74, 0.08) !important; 
+            background: #f8fbff !important;
+        }
+        
+        .stat { 
+            background: linear-gradient(135deg, #f8fbff 0%, #f0f7ff 100%);
+            border: 2px solid #e0ebf5;
+            border-radius: 10px; 
+            padding: 16px; 
+            text-align: center; 
+            transition: all 0.2s;
+        }
+        .stat:hover { border-color: #0F2A4A; background: linear-gradient(135deg, #f0f7ff 0%, #e8f2ff 100%); }
+        .stat div:first-child { color: #666; font-size: 12px; margin-bottom: 6px; font-weight: 600; }
+        .stat div:last-child { font-size: 24px; font-weight: 700; color: #0F2A4A; }
+        
+        .btn { 
+            padding: 12px 18px; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            border: none; 
+            cursor: pointer; 
+            background: linear-gradient(135deg, #0F2A4A 0%, #1a3a52 100%); 
+            color: white; 
+            font-size: 14px; 
+            transition: all 0.3s; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+            box-shadow: 0 4px 12px rgba(15, 42, 74, 0.18);
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(15, 42, 74, 0.25); }
+        
+        .tooltip { position: relative; display: inline-block; overflow: visible; }
+        .tooltip .tooltiptext { visibility: hidden; background-color: #0F2A4A; color: white; text-align: center; border-radius: 6px; padding: 8px 12px; position: absolute; z-index: 10000; bottom: 130%; left: 50%; margin-left: -60px; width: 120px; opacity: 0; transition: opacity 0.3s ease; font-size: 11px; font-weight: 700; white-space: normal; }
+        .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+        
+        .modal { display: none; position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 14px; padding: 28px; max-width: 450px; width: 95%; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .modal-content h2 { color: #0F2A4A; margin-bottom: 16px; font-size: 18px; font-weight: 700; }
+        
+        .login-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; background: linear-gradient(135deg, #0F2A4A 0%, #1a3a52 100%); }
+        .login-box { background: white; border-radius: 14px; padding: 40px; max-width: 380px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .login-box h1 { text-align: center; color: #0F2A4A; margin-bottom: 30px; font-size: 26px; font-weight: 700; }
+        .login-box input { margin-bottom: 14px; }
+        .login-box button { width: 100%; margin-bottom: 12px; }
+        
+        .user-badge { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 50px; font-size: 13px; color: white; font-weight: 700; }
+        
+        .art-card { 
+            background: white; 
+            border: 2px solid #e8ecf1; 
+            border-radius: 10px; 
+            padding: 14px; 
+            margin-bottom: 12px; 
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .art-card:hover { border-color: #0F2A4A; box-shadow: 0 4px 12px rgba(15, 42, 74, 0.1); }
+        .art-card.warning { border-left: 5px solid #ef4444; background: #fef8f8; }
+        
+        .log-item { background: #f8fbff; border-left: 4px solid #0F2A4A; padding: 12px; border-radius: 6px; margin-bottom: 8px; font-size: 12px; color: #555; }
+        
+        .split-progress { display: flex; gap: 2px; height: 20px; border-radius: 4px; overflow: hidden; background: #e8ecf1; }
+        .split-bar { display: flex; align-items: center; justify-content: center; transition: width 0.3s; flex: 1; }
+        .split-text { font-size: 10px; font-weight: 700; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        .bar-2w { background: linear-gradient(90deg, #f59e0b, #f97316); }
+        .bar-2w-done { background: linear-gradient(90deg, #10b981, #34d399); }
+        .bar-6w { background: linear-gradient(90deg, #0F2A4A, #1a3a52); }
+        
+        h1 { color: #0F2A4A; margin-bottom: 6px; }
+        #pdfTemplate { display: none; }
+    </style>
+</head>
+<body>
+    <!-- HEADER MIT LOGOS -->
+    <div class="header">
+        <div class="logo-section">
+            <div class="logo-container">
+                <div class="logo-text">atrikom</div>
+            </div>
+            <div class="logo-container">
+                <div class="logo-text">MANIKO</div>
+            </div>
+        </div>
+        <div class="header-title">Konfektionierung Dashboard</div>
+        <div></div>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-box">
+            <h1>Dashboard Login</h1>
+            <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:12px; font-weight:600; color:#555; margin-bottom:6px;">👤 Benutzer</label>
+                <input type="text" id="loginUsername" placeholder="">
+            </div>
+            <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:12px; font-weight:600; color:#555; margin-bottom:6px;">🔑 Passwort</label>
+                <div style="display:flex; gap:6px;">
+                    <input type="password" id="loginPassword" placeholder="" style="flex:1;">
+                    <button type="button" onclick="togglePassword()" style="padding:10px 12px; background:#0F2A4A; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:14px;">👁️</button>
+                </div>
+            </div>
+            <div id="loginError" style="color:#ef4444; margin-bottom:12px; display:none; font-size:12px; text-align:center;">❌ Falsch</div>
+            <button type="button" onclick="doLogin()" style="width:100%; padding:12px; background:linear-gradient(135deg, #0F2A4A 0%, #1a3a52 100%); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:14px;">Login</button>
+        </div>
+    </div>
+
+    <!-- DASHBOARD SCREEN -->
+    <div id="dashboardScreen" style="display:none;">
+        <div class="container">
+            <h1 style="margin-bottom:20px; font-size:28px;">📦 Konfektionierung Übersicht</h1>
+            
+            <!-- UPLOAD STATUS -->
+            <div id="uploadStatus" style="background:linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); border:2px solid #10b981; border-radius:12px; padding:16px; margin-bottom:16px; display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:700; color:#10b981; font-size:14px;">✅ Dateien erfolgreich geladen</div>
+                        <div style="font-size:12px; color:#666; margin-top:6px;" id="uploadDate"></div>
+                    </div>
+                    <button class="btn" onclick="document.getElementById('fileInput1').click()" style="background:#10b981;"><span>🔄</span><span>Aktualisieren</span></button>
+                </div>
+            </div>
+
+            <input type="file" id="fileInput1" accept=".xlsx" style="display:none;" onchange="handleForecastFile(this.files[0])">
+            <input type="file" id="fileInput2" accept=".xlsx" style="display:none;" onchange="handleBestandFile(this.files[0])">
+
+            <!-- BUTTONS -->
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
+                <button class="btn" id="adminBtn" onclick="showAdminPanel()" style="display:none; background:#ef4444;"><span>⚙️</span><span>Admin</span></button>
+                <button class="btn" onclick="document.getElementById('fileInput1').click()"><span>📋</span><span>Forecast</span></button>
+                <button class="btn" onclick="document.getElementById('fileInput2').click()" style="background:#10b981;"><span>📦</span><span>Bestand</span></button>
+                <button class="btn" onclick="showAuditLog()" style="background:#8b5cf6;"><span>📊</span><span>Änderungen</span></button>
+                <button class="btn" onclick="exportToExcel()" style="background:#16a34a;"><span>💾</span><span>Export</span></button>
+                <button class="btn" onclick="doLogout()" style="background:#64748b;"><span>🚪</span><span>Logout</span></button>
+            </div>
+
+            <!-- FILTER -->
+            <div class="glass">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; align-items:end;">
+                    <div><label style="font-size:11px; font-weight:600; color:#666; display:block; margin-bottom:6px;">📅 Datum</label><input type="date" id="dateInput" onchange="updateDashboard()"></div>
+                    <div><label style="font-size:11px; font-weight:600; color:#666; display:block; margin-bottom:6px;">⚠️ Min</label><select id="filterSelect" onchange="updateDashboard()"><option value="0">Alle</option><option value="10">≥10</option><option value="25">≥25</option><option value="50">≥50</option></select></div>
+                    <div><label style="font-size:11px; font-weight:600; color:#666; display:block; margin-bottom:6px;">👤 Name</label><input type="text" id="workerName" placeholder="Mitarbeiter"></div>
+                    <div><label style="font-size:11px; font-weight:600; color:#666; display:block; margin-bottom:6px;">🔍 Suche</label><input type="text" id="searchInput" placeholder="Artikel/GTIN" oninput="handleSearch()"></div>
+                    <div style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="onlyCriticalCheckbox" onchange="updateDashboard()" style="width:18px; height:18px; cursor:pointer;"><label style="font-size:11px; color:#666; font-weight:600; cursor:pointer;">Nur kritisch</label></div>
+                    <span class="user-badge" id="userBadge" style="justify-self:end;"></span>
+                </div>
+            </div>
+
+            <!-- STATISTIKEN -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px;">
+                <div class="stat"><div>Bedarf</div><div id="statForecast">0</div></div>
+                <div class="stat"><div>Bestand</div><div id="statProduced" style="font-size:16px;">0</div></div>
+                <div class="stat"><div>Noch zu tun</div><div id="statRemaining">0</div></div>
+                <div class="stat"><div>Fortschritt</div><div id="statProgress">0%</div></div>
+            </div>
+
+            <!-- ARTIKEL LISTE -->
+            <div id="articlesList"></div>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <div id="adminModal" class="modal"><div class="modal-content"><h2>⚙️ Admin Panel</h2><h3 style="font-size:12px; color:#0F2A4A; margin-bottom:12px; margin-top:16px;">👥 Benutzer</h3><div id="userList" style="margin-bottom:16px; max-height:200px; overflow-y:auto;"></div><div style="background:#f8fbff; border:1px solid #e0ebf5; border-radius:8px; padding:12px; margin-bottom:16px;"><h4 style="font-size:11px; font-weight:700; color:#0F2A4A; margin-bottom:8px;">➕ Neuer Benutzer</h4><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;"><input type="text" id="newUsername" placeholder="Benutzer" style="margin:0;"><input type="password" id="newPassword" placeholder="Passwort" style="margin:0;"></div><button onclick="addNewUser()" class="btn" style="width:100%; margin:0;">Hinzufügen</button></div><button onclick="closeAdminPanel()" class="btn" style="width:100%; background:#6b7280; margin:0;">Schließen</button></div></div>
+    <div id="auditModal" class="modal"><div class="modal-content"><h2>📊 Änderungen-Log</h2><div id="logList" style="max-height:300px; overflow-y:auto; margin-bottom:16px;"></div><div style="display:flex; gap:6px;"><button onclick="exportCSV()" class="btn" style="flex:1; margin:0;">📥 CSV</button><button onclick="askClearLog()" class="btn" style="flex:1; background:#ef4444; margin:0;">🗑️ Löschen</button><button onclick="closeAuditLog()" class="btn" style="flex:1; background:#6b7280; margin:0;">✕</button></div></div></div>
+    <div id="passwordModal" class="modal"><div class="modal-content" style="max-width:300px;"><h2>🔒 Passwort erforderlich</h2><input type="password" id="passwordInput" placeholder="" onkeypress="if(event.key==='Enter')checkPassword()" style="margin-bottom:12px;"><div id="passwordError" style="color:#ef4444; margin-bottom:8px; display:none; font-size:11px;">❌ Falsch</div><div style="display:flex; gap:6px;"><button onclick="closePasswordModal()" class="btn" style="flex:1; background:#6b7280; margin:0;">Abbrechen</button><button onclick="checkPassword()" class="btn" style="flex:1; background:#ef4444; margin:0;">OK</button></div></div></div>
+    <div id="confirmDeleteModal" class="modal"><div class="modal-content" style="max-width:300px;"><h2>⚠️ Bestätigung</h2><p style="color:#666; margin-bottom:16px; font-size:13px;">Wirklich löschen?</p><div style="display:flex; gap:6px;"><button onclick="closeConfirmDeleteModal()" class="btn" style="flex:1; background:#6b7280; margin:0;">Abbrechen</button><button onclick="performDelete()" class="btn" style="flex:1; background:#ef4444; margin:0;">Löschen</button></div></div></div>
+
+    <script>
+        const ADMIN_USER = 'ADMIN', ADMIN_PASS = 'AdmAtr2026#', CORRECT_PASSWORD = '0815';
+        const kw_dates = ["2026-01-06","2026-01-13","2026-01-20","2026-01-27","2026-02-03","2026-02-10","2026-02-17","2026-02-24","2026-03-03","2026-03-10","2026-03-17","2026-03-24","2026-03-31","2026-04-07","2026-04-14","2026-04-21","2026-04-28","2026-05-05","2026-05-12","2026-05-19","2026-05-26","2026-06-02","2026-06-09","2026-06-16","2026-06-23","2026-06-30","2026-07-07","2026-07-14","2026-07-21","2026-07-28","2026-08-04","2026-08-11","2026-08-18","2026-08-25","2026-09-01","2026-09-08","2026-09-15","2026-09-22","2026-09-29","2026-10-06","2026-10-13","2026-10-20","2026-10-27","2026-11-03","2026-11-10","2026-11-17","2026-11-24","2026-12-01","2026-12-08","2026-12-15","2026-12-22"];
+        
+        let articles = [], bestand = [], currentUser = null, isAdmin = false, warnings = [];
+
+        function togglePassword() { const p = document.getElementById('loginPassword'); p.type = p.type === 'password' ? 'text' : 'password'; }
+        function loadUsers() { let u = JSON.parse(localStorage.getItem('users')||'[]'); if(!u.length){ u=[{username:ADMIN_USER,password:ADMIN_PASS,isAdmin:true},{username:'AM',password:'atrikom2026#',isAdmin:false},{username:'NÖ',password:'atrikom2026#',isAdmin:false},{username:'BA',password:'atrikom2026#',isAdmin:false},{username:'GY',password:'atrikom2026#',isAdmin:false},{username:'TR',password:'atrikom2026#',isAdmin:false},{username:'KK',password:'atrikom2026#',isAdmin:false},{username:'NS',password:'atrikom2026#',isAdmin:false}]; localStorage.setItem('users',JSON.stringify(u)); } return u; }
+        function getUsers() { return JSON.parse(localStorage.getItem('users')||'[]')||loadUsers(); }
+        function saveUsers(u) { localStorage.setItem('users',JSON.stringify(u)); }
+        function doLogin() { const u=document.getElementById('loginUsername').value.trim(), p=document.getElementById('loginPassword').value; if(!u||!p){ document.getElementById('loginError').style.display='block'; return; } const user=getUsers().find(x=>x.username===u&&x.password===p); if(user){ currentUser=u; isAdmin=user.isAdmin||false; localStorage.setItem('current_user',u); document.getElementById('loginScreen').style.display='none'; document.getElementById('dashboardScreen').style.display='block'; document.getElementById('userBadge').innerHTML=`<span style="font-size:16px;">👤</span><span>${u}${isAdmin?' (Admin)':''}</span>`; document.getElementById('adminBtn').style.display=isAdmin?'inline-flex':'none'; initDate(); promptFileSelect(); }else{ document.getElementById('loginError').style.display='block'; document.getElementById('loginPassword').value=''; } }
+        function doLogout() { if(confirm('Abmelden?')){ localStorage.removeItem('current_user'); location.reload(); } }
+        function checkLogin() { const u=localStorage.getItem('current_user'); if(u){ currentUser=u; const user=getUsers().find(x=>x.username===u); isAdmin=user&&user.isAdmin; document.getElementById('loginScreen').style.display='none'; document.getElementById('dashboardScreen').style.display='block'; document.getElementById('userBadge').innerHTML=`<span style="font-size:16px;">👤</span><span>${u}${isAdmin?' (Admin)':''}</span>`; document.getElementById('adminBtn').style.display=isAdmin?'inline-flex':'none'; initDate(); promptFileSelect(); }else{ document.getElementById('loginScreen').style.display='flex'; document.getElementById('dashboardScreen').style.display='none'; } }
+        
+        function promptFileSelect() { const stored=localStorage.getItem('articles_data'); const stored_bestand=localStorage.getItem('bestand_data'); if(stored){ articles=JSON.parse(stored); } if(stored_bestand){ bestand=JSON.parse(stored_bestand); } if(!articles.length) setTimeout(()=>{ if(articles.length===0) document.getElementById('fileInput1').click(); }, 300); else if(!bestand.length) setTimeout(()=>{ if(bestand.length===0) document.getElementById('fileInput2').click(); }, 300); else { updateDashboard(); } }
+        
+        function handleForecastFile(f) { if(!f||!f.name.endsWith('.xlsx')){ alert('❌ Nur .xlsx!'); return; } const r=new FileReader(); r.onload=e=>{ try{ const wb=XLSX.read(e.target.result,{type:'array'}), ws=wb.Sheets[wb.SheetNames[0]]; const range=XLSX.utils.decode_range(ws['!ref']); articles=[]; for(let row=range.s.r+1; row<=range.e.r; row++){ const bCell=ws[XLSX.utils.encode_cell({r:row, c:1})]; const cCell=ws[XLSX.utils.encode_cell({r:row, c:2})]; if(!bCell||!cCell) continue; const gtin=String(bCell.v||'').trim(); const name=String(cCell.v||'').trim(); if(!gtin||!name) continue; const forecast=[]; for(let col=3; col<=53; col++){ const cell=ws[XLSX.utils.encode_cell({r:row, c:col})]; forecast.push(cell?parseInt(cell.v)||0:0); } articles.push({gtin:gtin, name:name, forecast:forecast}); } localStorage.setItem('articles_data',JSON.stringify(articles)); clearAllProduction(); showUploadStatus(articles.length); alert(`✅ ${articles.length} Artikel geladen!\n🔄 Alle produzierten Mengen zurückgesetzt!`); if(!bestand.length) setTimeout(()=>{ document.getElementById('fileInput2').click(); }, 300); else { updateDashboard(); } }catch(err){ alert('❌ Fehler: '+err.message); } }; r.readAsArrayBuffer(f); }
+        
+        function handleBestandFile(f) { if(!f||!f.name.endsWith('.xlsx')){ alert('❌ Nur .xlsx!'); return; } const r=new FileReader(); r.onload=e=>{ try{ const wb=XLSX.read(e.target.result,{type:'array'}), ws=wb.Sheets[wb.SheetNames[0]], data=XLSX.utils.sheet_to_json(ws); bestand=data.map((row,idx)=>{ const gtin=String(row['EANUPC']||'').trim(); const lagerort=String(row['BinName']||'').trim(); const menge=parseInt(row['QtyInBin'])||0; return {gtin:gtin, lagerort:lagerort, menge:menge}; }).filter(row=>row.gtin&&row.lagerort.startsWith('B2B Lager')); localStorage.setItem('bestand_data',JSON.stringify(bestand)); clearAllProduction(); alert(`✅ ${bestand.length} Bestandszeilen geladen!\n🔄 Alle produzierten Mengen zurückgesetzt!`); updateDashboard(); }catch(err){ alert('❌ Fehler: '+err.message); } }; r.readAsArrayBuffer(f); }
+        
+        function showUploadStatus(count) { const ts=localStorage.getItem('upload_timestamp')||'Jetzt'; document.getElementById('uploadStatus').style.display='flex'; document.getElementById('uploadDate').innerHTML=`<strong>${count} Artikel</strong> am ${ts}`; }
+
+        function showAdminPanel() { document.getElementById('adminModal').classList.add('active'); renderUserList(); }
+        function closeAdminPanel() { document.getElementById('adminModal').classList.remove('active'); }
+        function renderUserList() { const l=document.getElementById('userList'); l.innerHTML=getUsers().map((u,i)=>`<div style="background:#f8fbff; border:1px solid #e0ebf5; border-radius:6px; padding:8px; margin-bottom:6px; display:flex; justify-content:space-between;"><div><div style="font-weight:600; color:#0F2A4A; font-size:12px;">${u.username}</div></div><button onclick="deleteUser(${i})" class="btn" style="background:#ef4444; padding:4px 8px; font-size:11px; margin:0;">🗑️</button></div>`).join(''); }
+        function addNewUser() { const u=document.getElementById('newUsername').value.trim(), p=document.getElementById('newPassword').value; if(!u||!p){ alert('❌ Erforderlich!'); return; } const users=getUsers(); if(users.find(x=>x.username===u)){ alert('❌ Existiert!'); return; } users.push({username:u,password:p,isAdmin:false}); saveUsers(users); document.getElementById('newUsername').value=''; document.getElementById('newPassword').value=''; renderUserList(); alert('✅ Hinzugefügt!'); }
+        function deleteUser(i) { if(confirm('Löschen?')){ const u=getUsers(); u.splice(i,1); saveUsers(u); renderUserList(); } }
+        
+        function generatePDF(g,n,q,w) { document.getElementById('pdfArticle').textContent=n; document.getElementById('pdfGtin').textContent=g; document.getElementById('pdfQuantity').textContent=q.toLocaleString('de-DE'); document.getElementById('pdfDate').textContent=new Date().toLocaleDateString('de-DE'); document.getElementById('pdfWorker').textContent=w; setTimeout(()=>{ html2pdf().set({margin:0,filename:g+'_'+new Date().toLocaleDateString('de-DE').replace(/\./g,'-')+'.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true,allowTaint:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(document.getElementById('pdfContent')).save(); },100); }
+        
+        function getTodayDate() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+        function formatNumber(n) { return new Intl.NumberFormat('de-DE').format(Math.round(n)); }
+        function getProd(g) { return parseInt(localStorage.getItem('prod_'+g))||0; }
+        function setProd(g,v) { localStorage.setItem('prod_'+g,v); }
+        function getLog() { return JSON.parse(localStorage.getItem('log_all')||'[]'); }
+        function addLog(e) { let l=getLog(); l.push({...e,ts:new Date().toISOString()}); localStorage.setItem('log_all',JSON.stringify(l)); }
+        function handleDailyInput(g,n,e) { if(e.key==='Enter'){ const v=parseInt(e.target.value); if(!isNaN(v)&&v!==0) addDailyProduction(g,n,v); } }
+        function addDailyProduction(g,n,v) { const c=getProd(g), nv=c+v; if(nv<0){ alert('❌ Negativ!'); return; } setProd(g,nv); const w=document.getElementById('workerName').value.trim()||'Unbekannt'; addLog({gtin:g,article:n,worker:w,oldValue:c,newValue:nv,difference:v,date:new Date().toLocaleString('de-DE')}); if(v>0) generatePDF(g,n,v,w); updateDashboard(); }
+        function addDailyProductionFromButton(g,n) { const input=document.getElementById('input_'+g); const v=parseInt(input.value)||0; if(v===0){ alert('⚠️ Bitte Menge eingeben!'); return; } addDailyProduction(g,n,v); input.value=''; }
+        function handleSearch() { updateDashboard(); }
+        function showAuditLog() { document.getElementById('auditModal').classList.add('active'); const l=document.getElementById('logList'); const logs=getLog(); l.innerHTML=!logs.length?'<p style="text-align:center; color:#666; font-size:13px;">Keine Einträge</p>':logs.slice().reverse().map(x=>`<div class="log-item">📝 <strong>${x.article}</strong> (${x.worker})<br/><small>${x.oldValue}→${x.newValue} | ${x.date}</small></div>`).join(''); }
+        function closeAuditLog() { document.getElementById('auditModal').classList.remove('active'); }
+        function exportCSV() { let csv='Datum,Mitarbeiter,Artikel,Alt,Neu,Differenz\n'; getLog().forEach(l=>csv+=`${l.date},${l.worker},${l.article},${l.oldValue},${l.newValue},${l.difference}\n`); const b=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download='audit_'+getTodayDate()+'.csv'; a.click(); }
+        function askClearLog() { document.getElementById('passwordModal').classList.add('active'); document.getElementById('passwordInput').value=''; document.getElementById('passwordError').style.display='none'; }
+        function closePasswordModal() { document.getElementById('passwordModal').classList.remove('active'); }
+        function checkPassword() { const p=document.getElementById('passwordInput').value; if(p===CORRECT_PASSWORD){ closePasswordModal(); document.getElementById('confirmDeleteModal').classList.add('active'); }else{ document.getElementById('passwordError').style.display='block'; } }
+        function closeConfirmDeleteModal() { document.getElementById('confirmDeleteModal').classList.remove('active'); }
+        function performDelete() { localStorage.removeItem('log_all'); closeConfirmDeleteModal(); showAuditLog(); alert('✓ Gelöscht'); }
+        function exportToExcel() { 
+            if(!articles.length){ alert('❌ Keine Daten!'); return; } 
+            alert('⏳ Export wird erstellt... Dies kann kurz dauern.');
+            
+            // Alle relevanten Daten sammeln
+            const d = document.getElementById('dateInput').value;
+            const f = parseInt(document.getElementById('filterSelect').value);
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            const onlyCritical = document.getElementById('onlyCriticalCheckbox').checked;
+            
+            // Produktion-Daten sammeln
+            const prod_data = {};
+            articles.forEach(a => {
+                prod_data[`prod_${a.gtin}`] = getProd(a.gtin);
+            });
+            
+            // Filter-Objekt
+            const filters = {
+                date: d,
+                min_amount: f,
+                search: searchTerm,
+                only_critical: onlyCritical
+            };
+            
+            // An Python übergeben (Fallback: direkt XLSX)
+            const articlesJSON = JSON.stringify(articles);
+            const bestandJSON = JSON.stringify(bestand);
+            const prodJSON = JSON.stringify(prod_data);
+            const filtersJSON = JSON.stringify(filters);
+            
+            // Simuliere Export mit aktuellem Code
+            const d_idx = kw_dates.findIndex(x => new Date(x) >= new Date(d));
+            const s = Math.max(0, d_idx), e = Math.min(s + 6, kw_dates.length);
+            
+            let arts = articles.map(a => {
+                let fc = 0;
+                for(let i = s; i < e; i++) fc += a.forecast[i] || 0;
+                const prod = getProd(a.gtin);
+                const best = getBestand(a.gtin);
+                const verfügbar = best + prod;
+                const zuProduzieren = Math.max(0, fc - verfügbar);
+                return {...a, forecast: fc, bestand: best, produced: prod, verfügbar: verfügbar, zuProduzieren: zuProduzieren};
+            }).filter(a => a.forecast >= f);
+            
+            if(searchTerm) {
+                const q = searchTerm.toLowerCase();
+                arts = arts.filter(a => a.name.toLowerCase().includes(q) || a.gtin.includes(q));
+            }
+            
+            if(onlyCritical) {
+                const warnings = [];
+                articles.forEach(a => {
+                    const prod = getProd(a.gtin);
+                    const best = getBestand(a.gtin);
+                    const verfügbar = best + prod;
+                    const tw = (a.forecast[s] || 0) + (a.forecast[s + 1] || 0);
+                    if(tw > 0 && verfügbar < tw) warnings.push({gtin: a.gtin});
+                });
+                arts = arts.filter(a => warnings.find(w => w.gtin === a.gtin));
+            }
+            
+            arts.sort((a, b) => b.zuProduzieren - a.zuProduzieren);
+            
+            // Excel-Datei mit korrekten Daten generieren
+            const ws_data = [];
+            ws_data.push(['KONFEKTIONIERUNG DASHBOARD - ' + getTodayDate()]);
+            ws_data.push(['']);
+            ws_data.push(['Artikel', 'GTIN', 'Bestand', 'Produziert', 'Verfügbar', 'Bedarf (6W)', 'Zu produzieren']);
+            
+            arts.forEach(a => {
+                ws_data.push([a.name, a.gtin, a.bestand, a.produced, a.verfügbar, a.forecast, a.zuProduzieren]);
+            });
+            
+            // Mit SheetJS.Pro oder Fallback
+            try {
+                const ws = XLSX.utils.aoa_to_sheet(ws_data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Export');
+                XLSX.writeFile(wb, 'Konfektionierung_' + getTodayDate() + '.xlsx');
+                alert('✅ Excel exportiert!');
+            } catch(err) {
+                alert('✅ Bitte öffne die Datei manuell. Die Daten sind oben sichtbar.');
+            }
+        }
+        function initDate() { const d=new Date(); document.getElementById('dateInput').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+        function getBestand(gtin) { const sum = bestand.filter(b=>b.gtin===gtin).reduce((s,b)=>s+b.menge,0); return sum; }
+        function clearAllProduction() { 
+            // Alle localStorage prod_ Keys löschen
+            for(let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if(key && key.startsWith('prod_')) {
+                    localStorage.removeItem(key);
+                }
+            }
+        }
+        function updateDashboard() { if(!articles.length){ document.getElementById('articlesList').innerHTML='<div style="text-align:center; color:#666; padding:40px; font-size:14px;">📭 Bitte Dateien hochladen</div>'; return; } const d=document.getElementById('dateInput').value, f=parseInt(document.getElementById('filterSelect').value); const idx=kw_dates.findIndex(x=>new Date(x)>=new Date(d)); const s=Math.max(0,idx), e=Math.min(s+6,kw_dates.length); warnings=[]; articles.forEach(a=>{ const prod=getProd(a.gtin), best=getBestand(a.gtin), verfügbar=best+prod, tw=(a.forecast[s]||0)+(a.forecast[s+1]||0); if(tw>0&&verfügbar<tw) warnings.push({article:a.name,gtin:a.gtin,twoWeekBedarf:tw,bestand:best,produced:prod,verfügbar:verfügbar}); }); let arts=articles.map(a=>{ let fc=0; for(let i=s;i<e;i++) fc+=a.forecast[i]||0; const prod=getProd(a.gtin), best=getBestand(a.gtin), verfügbar=best+prod, tw=(a.forecast[s]||0)+(a.forecast[s+1]||0), zuProduzieren=Math.max(0,fc-verfügbar); return {...a,forecast:fc,bestand:best,produced:prod,verfügbar:verfügbar,remaining:Math.max(0,fc-verfügbar),twoWeekBedarf:tw,zuProduzieren:zuProduzieren}; }).filter(a=>a.forecast>=f); if(document.getElementById('searchInput').value.trim()){ const q=document.getElementById('searchInput').value.toLowerCase(); arts=arts.filter(a=>a.name.toLowerCase().includes(q)||a.gtin.includes(q)); } if(document.getElementById('onlyCriticalCheckbox').checked){ arts=arts.filter(a=>{ const warn=warnings.find(w=>w.gtin===a.gtin); return warn!==undefined; }); } arts.sort((a,b)=>b.zuProduzieren-a.zuProduzieren); const tf=arts.reduce((s,a)=>s+a.forecast,0), tb=arts.reduce((s,a)=>s+a.bestand,0), tp=arts.reduce((s,a)=>s+a.produced,0), tv=arts.reduce((s,a)=>s+a.verfügbar,0), tr=arts.reduce((s,a)=>s+a.remaining,0), pr=tf>0?Math.round(tv/tf*100):0; document.getElementById('statForecast').textContent=formatNumber(tf); document.getElementById('statProduced').textContent=formatNumber(tp)+` (${formatNumber(tb)})`; document.getElementById('statRemaining').textContent=formatNumber(tr); document.getElementById('statProgress').textContent=pr+'%'; if(!arts.length){ document.getElementById('articlesList').innerHTML='<div style="text-align:center; color:#666; padding:40px; font-size:14px;">📭 Keine Artikel</div>'; return; } document.getElementById('articlesList').innerHTML=arts.map(a=>{ const p6=a.forecast>0?(a.verfügbar/a.forecast)*100:0, p2=a.twoWeekBedarf>0?(a.verfügbar/a.twoWeekBedarf)*100:0; const isDone=a.remaining===0, warn=warnings.some(w=>w.gtin===a.gtin); return `<div class="art-card ${warn?'warning':''}"><div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px;"><div><div style="font-weight:600; color:#0F2A4A; font-size:13px;">${warn?'🔴 ':''}${a.name}</div><div style="font-size:11px; color:#666;">GTIN: ${a.gtin}</div></div><span style="padding:3px 8px; border-radius:4px; font-size:10px; font-weight:700; ${isDone?'background:#ecfdf5; color:#10b981;':'background:#fef3c7; color:#d97706;'}">${isDone?'✓':'OFFEN'}</span></div><div style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:8px;"><div class="stat"><div>Bedarf</div><div style="font-size:18px;">${formatNumber(a.forecast)}</div></div><div class="stat"><div>Bestand</div><div style="font-size:18px;">${formatNumber(a.bestand)}</div></div><div class="stat"><div>Prod.</div><div style="font-size:18px;">${formatNumber(a.produced)}</div></div><div class="stat"><div>Verfügbar</div><div style="font-size:18px; color:${a.remaining<=0?'#10b981':'#f59e0b'};\">${formatNumber(a.verfügbar)}</div></div><div class="stat" style="background:${a.zuProduzieren>0?'linear-gradient(135deg, #fef3c7 0%, #fef08a 100%)':'linear-gradient(135deg, #f8fbff 0%, #f0f7ff 100%)'}; border-color:${a.zuProduzieren>0?'#fcd34d':'#e0ebf5'};"><div>Zu prod.</div><div style="font-size:18px; color:${a.zuProduzieren>0?'#d97706':'#0F2A4A'};\">${formatNumber(a.zuProduzieren)}</div></div></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;"><input type="number" id="input_${a.gtin}" placeholder="Menge" onfocus="this.value=''" onkeypress="handleDailyInput('${a.gtin}','${a.name}',event)" style="text-align:center; font-weight:600;"><button onclick="addDailyProductionFromButton('${a.gtin}','${a.name}')" style="padding:10px; background:#0F2A4A; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:12px;">✅ Buchen</button></div><div style="display:flex; gap:8px; margin-bottom:6px; font-size:11px;"><div style="flex:1;"><div style="color:#666;">⏰ 2W</div><div style="color:${p2>=100?'#10b981':'#f59e0b'}; font-weight:600;">${formatNumber(a.verfügbar)}/${formatNumber(a.twoWeekBedarf)}</div></div><div style="flex:1;"><div style="color:#666;">📊 6W</div><div style="color:#0F2A4A; font-weight:600;">${formatNumber(a.verfügbar)}/${formatNumber(a.forecast)}</div></div></div><div class="split-progress"><div class="split-bar ${p2>=100?'bar-2w-done':'bar-2w'}" style="width:${Math.min(p2,100)}%;"><span class="split-text">${Math.round(Math.min(p2,100))}%</span></div><div class="split-bar bar-6w" style="width:${Math.min(p6,100)}%;"><span class="split-text">${Math.round(p6)}%</span></div></div></div>`; }).join(''); }
+        
+        loadUsers();
+        // Bei jedem Start: localStorage users löschen damit neue Default-User geladen werden
+        localStorage.removeItem('users');
+        loadUsers();
+        checkLogin();
+    </script>
+
+    <!-- PDF TEMPLATE -->
+    <div id="pdfTemplate" style="display:none;">
+        <div id="pdfContent" style="width:210mm; padding:0; margin:0; font-family:'Arial', sans-serif; color:#000; background:#fff; page-break-after:avoid;">
+            
+            <!-- HEADER MIT LOGOS -->
+            <div style="background: linear-gradient(135deg, #0F2A4A 0%, #1a3a52 100%); padding:8mm 10mm; text-align:center; color:white; page-break-inside:avoid;">
+                <div style="display:flex; justify-content:center; align-items:center; gap:10mm; margin-bottom:3mm;">
+                    <div style="font-size:12px; font-weight:bold; letter-spacing:0.5px;">atrikom fulfillment</div>
+                    <div style="font-size:14px; font-weight:bold; letter-spacing:1.5px;">MANIKO</div>
+                </div>
+                <h2 style="margin:0; font-size:13px; font-weight:bold; letter-spacing:0.5px;">PRODUKTIONSBESTÄTIGUNG</h2>
+            </div>
+            
+            <!-- INHALT -->
+            <div style="padding:10mm; page-break-inside:avoid;">
+                
+                <!-- ARTIKEL-INFOS -->
+                <div style="margin-bottom:10mm; page-break-inside:avoid;">
+                    <table style="width:100%; border-collapse:collapse;">
+                        <tr>
+                            <td style="width:28%; padding:4mm 5mm; border:1px solid #ccc; background:#f5f5f5; font-weight:bold; font-size:9px;">Artikel</td>
+                            <td style="width:72%; padding:4mm 5mm; border:1px solid #ccc; font-size:9px;" id="pdfArticle">-</td>
+                        </tr>
+                        <tr>
+                            <td style="width:28%; padding:4mm 5mm; border:1px solid #ccc; background:#f5f5f5; font-weight:bold; font-size:9px;">GTIN / EAN</td>
+                            <td style="width:72%; padding:4mm 5mm; border:1px solid #ccc; font-size:9px;" id="pdfGtin">-</td>
+                        </tr>
+                        <tr>
+                            <td style="width:28%; padding:4mm 5mm; border:1px solid #ccc; background:#f5f5f5; font-weight:bold; font-size:9px;">Datum</td>
+                            <td style="width:72%; padding:4mm 5mm; border:1px solid #ccc; font-size:9px;" id="pdfDate">-</td>
+                        </tr>
+                        <tr>
+                            <td style="width:28%; padding:4mm 5mm; border:1px solid #ccc; background:#f5f5f5; font-weight:bold; font-size:9px;">Mitarbeiter</td>
+                            <td style="width:72%; padding:4mm 5mm; border:1px solid #ccc; font-size:9px;" id="pdfWorker">-</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <!-- MENGE HERVORGEHOBEN -->
+                <div style="background:linear-gradient(135deg, #0F2A4A 0%, #1a3a52 100%); color:white; padding:12mm; text-align:center; border-radius:2px; margin:10mm 0; page-break-inside:avoid;">
+                    <div style="font-size:10px; font-weight:bold; margin-bottom:5mm; text-transform:uppercase; letter-spacing:0.5px;">Produzierte Menge</div>
+                    <div style="font-size:48px; font-weight:bold; line-height:1;" id="pdfQuantity">0</div>
+                    <div style="font-size:10px; margin-top:3mm;">Stück</div>
+                </div>
+                
+                <!-- UNTERSCHRIFTEN -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8mm; margin-top:10mm; page-break-inside:avoid;">
+                    <div>
+                        <p style="margin:0 0 8mm 0; font-size:8px; color:#666;">Produzent / Datum</p>
+                        <div style="border-top:1.5px solid #0F2A4A; padding-top:3mm; min-height:15mm;"></div>
+                        <p style="margin:2mm 0 0 0; font-size:8px; font-weight:bold;">Unterschrift</p>
+                    </div>
+                    <div>
+                        <p style="margin:0 0 8mm 0; font-size:8px; color:#666;">Kontrolle / Datum</p>
+                        <div style="border-top:1.5px solid #0F2A4A; padding-top:3mm; min-height:15mm;"></div>
+                        <p style="margin:2mm 0 0 0; font-size:8px; font-weight:bold;">Unterschrift</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- FOOTER -->
+            <div style="background:#f5f5f5; padding:5mm; text-align:center; font-size:7px; color:#999; border-top:1px solid #ccc; margin-top:10mm; page-break-inside:avoid;">
+                <p style="margin:0;">MANIKO NAILS | Konfektionierung Dashboard</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
